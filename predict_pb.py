@@ -152,9 +152,7 @@ class YoloTest(object):
         return bboxes
 
     def detect_image(self, image):
-        original_image = np.copy(image)
         bboxes = self.__get_bbox(image)
-        #image = self.__draw_bbox(original_image, bboxes)
         res = []
         for i,box in enumerate(bboxes):
             x1, y1, x2, y2 = int(round(box[0])), int(round(box[1])), int(round(box[2])), int(round(box[3]))
