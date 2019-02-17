@@ -63,9 +63,9 @@ def freeze_graph(input_checkpoint, output_graph):
     output_node_names = ["input/input_data", "pred_lbbox/pred_bbox", "pred_sbbox/pred_bbox", "pred_mbbox/pred_bbox"]
     import config as cfg
     from model.yolo_v3 import YOLO_V3
+    __training = False
     with tf.name_scope('input'):
         __input_data = tf.placeholder(dtype=tf.float32, name='input_data')
-        __training = tf.placeholder_with_default(False, shape=[], name='training')
         #__training = tf.placeholder(dtype=tf.bool, name='training')
     _, _, _, __pred_sbbox, __pred_mbbox, __pred_lbbox = YOLO_V3(__training).build_nework(__input_data)
     __moving_ave_decay = cfg.MOVING_AVE_DECAY
@@ -159,9 +159,9 @@ def freeze_graph2(input_checkpoint, pb_model):
 
 
 if __name__ == "__main__":
-    model_path = './weights/yolo.ckpt-0-7.2144' #load model
+    model_path = './weights/yolo.ckpt-1-6.4084' #load model
     pb_model = "model_yolov3.pb" #save final pb model
 
-    freeze_graph2(model_path, pb_model)
+    freeze_graph(model_path, pb_model)
     #print_pb(pb_model)
     print("create %s done..." %(pb_model))

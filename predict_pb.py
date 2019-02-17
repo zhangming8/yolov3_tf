@@ -22,10 +22,12 @@ def init_tf():
         tf.import_graph_def(graph_def, name='')
 
     # 获取输入tensor
-    x = tf.get_default_graph().get_tensor_by_name("input_1:0")
+    x = tf.get_default_graph().get_tensor_by_name("input/input_data:0")
     print("input:", x)
     # 获取预测tensor
-    pred = tf.get_default_graph().get_tensor_by_name("softmax_out:0")  #mobilenet_v2
+    pred_lbbox = tf.get_default_graph().get_tensor_by_name("pred_lbbox/pred_bbox:0")
+    pred_mbbox = tf.get_default_graph().get_tensor_by_name("pred_mbbox/pred_bbox:0")
+    pred_sbbox = tf.get_default_graph().get_tensor_by_name("pred_sbbox/pred_bbox:0")
     print('load model done...')
 
 def evaluate_image(img_dir):
