@@ -29,7 +29,14 @@ def batch_normalization(input_data, input_channel, training, decay=0.9):
                                           tf.assign(moving_var, moving_var * decay + batch_var * (1 - decay))]):
                 return tf.identity(batch_mean), tf.identity(batch_var)
 
-        mean, variance = tf.cond(training, mean_and_var_update, lambda: (moving_mean, moving_var))
+        # mean, variance = tf.cond(training, mean_and_var_update, lambda: (moving_mean, moving_var))
+        if training == True:
+            mean, variance = mean_and_var_update()
+        elif training == False:
+            mean, variance = moving_mean, moving_var
+        else:
+            print("please set training to True or False")
+            exit()
         return tf.nn.batch_normalization(input_data, mean, variance, shift, scale, 1e-05)
 
 

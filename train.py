@@ -42,7 +42,8 @@ class YoloTrain(object):
             self.__mbboxes = tf.placeholder(dtype=tf.float32, name='mbboxes')
             self.__lbboxes = tf.placeholder(dtype=tf.float32, name='lbboxes')
             #self.__training = tf.placeholder(dtype=tf.bool, name='training')
-            self.__training = tf.placeholder_with_default(False, shape=[], name='training')
+            #self.__training = tf.placeholder_with_default(False, shape=[], name='training')
+            self.__training = True
 
         self.__yolo = YOLO_V3(self.__training)
         self.__conv_sbbox, self.__conv_mbbox, self.__conv_lbbox, \
@@ -143,8 +144,8 @@ class YoloTrain(object):
                         self.__label_lbbox: batch_label_lbbox,
                         self.__sbboxes: batch_sbboxes,
                         self.__mbboxes: batch_mbboxes,
-                        self.__lbboxes: batch_lbboxes,
-                        self.__training: False
+                        self.__lbboxes: batch_lbboxes
+                        # self.__training: False
                     }
                 )
                 print "running"
@@ -174,8 +175,8 @@ class YoloTrain(object):
                         self.__label_lbbox: batch_label_lbbox,
                         self.__sbboxes: batch_sbboxes,
                         self.__mbboxes: batch_mbboxes,
-                        self.__lbboxes: batch_lbboxes,
-                        self.__training: False
+                        self.__lbboxes: batch_lbboxes
+                        # self.__training: False
                 }
                 )
                 print "running"
