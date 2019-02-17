@@ -4,7 +4,7 @@ import tensorflow as tf
 from tensorflow.python import pywrap_tensorflow
 
 #使用NewCheckpointReader来读取ckpt里的变量
-checkpoint_path = "weights/yolo.ckpt-0-7.2752"
+checkpoint_path = "weights/yolo.ckpt-3-6.3574"
 roi_name = "bbox"
 
 reader = pywrap_tensorflow.NewCheckpointReader(checkpoint_path) #tf.train.NewCheckpointReader
