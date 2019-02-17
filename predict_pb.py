@@ -68,7 +68,7 @@ class YoloTest(object):
         yolo_input = utils.img_preprocess2(image, None, (self.__test_input_size, self.__test_input_size), False)
         yolo_input = yolo_input[np.newaxis, ...]
 
-        pred_sbbox, pred_mbbox, pred_lbbox = self.sess.run(
+        pred_sbbox, pred_mbbox, pred_lbbox = sess.run(
             [self.__pred_sbbox, self.__pred_mbbox, self.__pred_lbbox], feed_dict={self.__input_data: yolo_input})
 
         sbboxes = self.__convert_pred(pred_sbbox, (org_h, org_w), self.__valid_scales[0])
