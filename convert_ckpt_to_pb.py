@@ -7,7 +7,6 @@ from tensorflow.python.framework import graph_util
 #sys.path.append("/home/lishundong/Desktop/models/research/slim")
 #from nets.mobilenet import mobilenet_v2
 #import model
-from model.yolo_v3 import YOLO_V3
 
 
 def print_pb(output_graph_path):
@@ -61,14 +60,68 @@ def save_new_ckpt(logs_train_dir, newckpt):
 
 def freeze_graph(input_checkpoint, output_graph):
     # 指定输出的节点名称,该节点名称必须是原模型中存在的节点
-    output_node_names = ["input_1", "conv_lbbox/weight","conv_lbbox/bias", "conv_mbbox/weight", "conv_mbbox/bias", "conv_sbbox/weight", "conv_sbbox/bias"]
-    saver = tf.train.import_meta_graph(input_checkpoint + '.meta', clear_devices=True)
+    output_node_names = ["input/input_data", "pred_lbbox/pred_bbox", "pred_sbbox/pred_bbox", "pred_mbbox/pred_bbox"]
+    import config as cfg
+    from model.yolo_v3 import YOLO_V3
+    with tf.name_scope('input'):
+        __input_data = tf.placeholder(dtype=tf.float32, name='input_data')
+        __training = tf.placeholder_with_default(False, shape=[], name='training')
+        #__training = tf.placeholder(dtype=tf.bool, name='training')
+    _, _, _, __pred_sbbox, __pred_mbbox, __pred_lbbox = YOLO_V3(__training).build_nework(__input_data)
+    __moving_ave_decay = cfg.MOVING_AVE_DECAY
+    with tf.name_scope('ema'):
+        ema_obj = tf.train.ExponentialMovingAverage(__moving_ave_decay)
+    saver = tf.train.Saver(ema_obj.variables_to_restore())
+
+
+#    saver = tf.train.import_meta_graph(input_checkpoint + '.meta', clear_devices=True) #得到图、clear_devices ：Whether or not to clear the device field for an `Operation` or `Tensor` during import.
+ 
+    graph = tf.get_default_graph() #获得默认的图
+    input_graph_def = graph.as_graph_def()  #返回一个序列化的图代表当前的图
  
     with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
         saver.restore(sess, input_checkpoint) #恢复图并得到数据
+        print("loading model ...")
+        
+        # fix batch norm nodes
+       # for node in input_graph_def.node:
+       #   if node.op == 'RefSwitch':
+       #     #print(node)
+       #     node.op = 'Switch'
+       #     for index in range(len(node.input)):
+       #       if 'moving_' in node.input[index]:
+       #         node.input[index] = node.input[index] + '/read'
+       #   elif node.op == 'AssignSub':
+       #     node.op = 'Sub'
+       #     if 'use_locking' in node.attr: del node.attr['use_locking']
+
+        for node in input_graph_def.node:
+          if node.op == 'RefSwitch':
+            node.op = 'Switch'
+            for index in xrange(len(node.input)):
+              if 'moving_' in node.input[index]:
+                node.input[index] = node.input[index] + '/read'
+          elif node.op == 'AssignSub':
+            node.op = 'Sub'
+            if 'use_locking' in node.attr: del node.attr['use_locking']
+          elif node.op == 'AssignAdd':
+            node.op = 'Add'
+            if 'use_locking' in node.attr: del node.attr['use_locking']
+          elif node.op == 'Assign':
+            node.op = 'Identity'
+            if 'use_locking' in node.attr: del node.attr['use_locking']
+            if 'validate_shape' in node.attr: del node.attr['validate_shape']
+            if len(node.input) == 2:
+              # input0: ref: Should be from a Variable node. May be uninitialized.
+              # input1: value: The value to be assigned to the variable.
+              node.input[0] = node.input[1]
+              del node.input[1]
+ 
+        #print ("predictions : ", sess.run("predictions:0", feed_dict={"input_holder:0": [10.0]})) # 测试读出来的模型是否正确，注意这里传入的是输出 和输入 节点的 tensor的名字，不是操作节点的名字
         output_graph_def = graph_util.convert_variables_to_constants(  # 模型持久化，将变量值固定
             sess=sess,
-            input_graph_def=sess.graph_def, # 等于:sess.graph_def
+            input_graph_def=sess.graph.as_graph_def(), # 等于:sess.graph_def
             output_node_names=output_node_names)
  
         with tf.gfile.GFile(output_graph, "wb") as f: #保存模型
@@ -76,29 +129,39 @@ def freeze_graph(input_checkpoint, output_graph):
         print("%d ops in the final graph." % len(output_graph_def.node)) #得到当前图有几个操作节点
 
 
-def get_label(label_file):
-    label_dict, label_dict_res = {}, {}
-    with open(label_file, 'r') as f:
-        for line in f.readlines():
-            folder, label = line.strip().split(':')[0], line.strip().split(':')[1]
-            label_dict[folder] = label
-            label_dict_res[label] = folder
-    print(label_dict)
-    return label_dict
+def freeze_graph2(input_checkpoint, pb_model):
+        saver = tf.train.import_meta_graph(input_checkpoint + '.meta', clear_devices=True) 
+        sess = tf.Session()
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
+        saver.restore(sess, input_checkpoint)
+        
+        output_node_names = ["input/input_data", "pred_lbbox/pred_bbox", "pred_sbbox/pred_bbox", "pred_mbbox/pred_bbox"]
+        
+        # for fixing the bug of batch norm
+        gd = sess.graph.as_graph_def()
+        for node in gd.node:            
+            if node.op == 'RefSwitch':
+                node.op = 'Switch'
+                for index in range(len(node.input)):
+                    if 'moving_' in node.input[index]:
+                        node.input[index] = node.input[index] + '/read'
+            elif node.op == 'AssignSub':
+                node.op = 'Sub'
+                if 'use_locking' in node.attr: del node.attr['use_locking']
+            elif node.op == 'AssignAdd':
+                node.op = 'Add'
+                if 'use_locking' in node.attr: del node.attr['use_locking']
+        
+        converted_graph_def = graph_util.convert_variables_to_constants(sess, gd, output_node_names)
+        tf.train.write_graph(converted_graph_def, "./", pb_model, as_text=False)
+        sess.close()
 
 
 if __name__ == "__main__":
-    #label_file = "label_mnist.txt"
-    #label_file = "label_key.txt"
-    #IMG_W = 28
-    model_path = './weights/yolo.ckpt-16-6.0901' #load model
+    model_path = './weights/yolo.ckpt-0-7.2144' #load model
     pb_model = "model_yolov3.pb" #save final pb model
 
-    #N_CLASSES = len(get_label(label_file))
-    #print("num classes:", N_CLASSES)
-    new_model_path = './model_temp/modelnew.ckpt' #save temp model
-    save_new_ckpt(model_path, new_model_path)
-    freeze_graph(new_model_path, pb_model)
+    freeze_graph2(model_path, pb_model)
     #print_pb(pb_model)
     print("create %s done..." %(pb_model))
-    shutil.rmtree("./model_temp")
