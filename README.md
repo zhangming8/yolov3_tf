@@ -1,5 +1,7 @@
 Note
 =
+**fork from https://github.com/Stinky-Tofu/YOLO_V3.git
+
 **Don't update the code during the winter vacation, wish everyone have a happy new year in advance.**<br>
 **I'm solving scale invariant. If you have a good paper, you can email me by StinkyTofu95@gmail.com. Thanks!**<br>
 
