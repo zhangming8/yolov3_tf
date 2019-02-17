@@ -36,10 +36,11 @@ class YoloTest(object):
         self.__moving_ave_decay = cfg.MOVING_AVE_DECAY
         self.__dataset_path = cfg.DATASET_PATH
         self.__valid_scales = cfg.VALID_SCALES
+        self.__training = False
 
         with tf.name_scope('input'):
             self.__input_data = tf.placeholder(dtype=tf.float32, name='input_data')
-            self.__training = tf.placeholder(dtype=tf.bool, name='training')
+            # self.__training = tf.placeholder(dtype=tf.bool, name='training')
         _, _, _, self.__pred_sbbox, self.__pred_mbbox, self.__pred_lbbox = \
             YOLO_V3(self.__training).build_nework(self.__input_data)
         with tf.name_scope('summary'):
@@ -64,8 +65,8 @@ class YoloTest(object):
         pred_sbbox, pred_mbbox, pred_lbbox = self.__sess.run(
             [self.__pred_sbbox, self.__pred_mbbox, self.__pred_lbbox],
             feed_dict={
-                self.__input_data: yolo_input,
-                self.__training: False
+                self.__input_data: yolo_input
+                # self.__training: False
             }
         )
 
