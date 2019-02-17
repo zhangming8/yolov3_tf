@@ -158,6 +158,7 @@ class YoloTrain(object):
                 total_train_loss = 0.0
                 self.__summary_writer.add_summary(summary_value, period * len(self.__train_data) + step)
                 logging.info('Period:\t%d\tstep:\t%d\ttrain loss:\t%.4f' % (period, step, train_loss))
+                print('Period:\t%d\tstep:\t%d\ttrain loss:\t%.4f' % (period, step, train_loss))
 
             if (period + 1) % self.__save_iter:
                 continue
@@ -183,6 +184,7 @@ class YoloTrain(object):
                 total_test_loss += loss_value
             test_loss = total_test_loss / len(self.__test_data)
             logging.info('Period:\t%d\ttest loss:\t%.4f' % (period, test_loss))
+            print('Period:\t%d\ttest loss:\t%.4f' % (period, test_loss))
             saved_model_name = os.path.join(self.__weights_dir, 'yolo.ckpt-%d-%.4f' % (period, test_loss))
             self.__save.save(self.__sess, saved_model_name)
             logging.info('Saved model:\t%s' % saved_model_name)
