@@ -2,15 +2,14 @@ Note
 =
 **fork from https://github.com/Stinky-Tofu/YOLO_V3.git
 
-**Don't update the code during the winter vacation, wish everyone have a happy new year in advance.**<br>
-**I'm solving scale invariant. If you have a good paper, you can email me by StinkyTofu95@gmail.com. Thanks!**<br>
-
-## added function:
+## my own added function:
 1. the ckpt model is soooo big (around 1GB), so I add the function: conver ckpt model to .pb model(around 250Mb) (python2 convert_ckpt_to_pb.py)
 2. use .pb model to detect img (python2 predict_pb.py)
 
 
 ## Improve yolo_v3 with latest paper <br>
+**Don't update the code during the winter vacation, wish everyone have a happy new year in advance.**<br>
+**I'm solving scale invariant. If you have a good paper, you can email me by StinkyTofu95@gmail.com. Thanks!**<br>
 #### updated
 - [x] Data augmentation(release)<br>
 - [x] Multi-scale training(release)<br>
