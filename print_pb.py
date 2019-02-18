@@ -17,7 +17,7 @@ with tf.Session() as sess:
         print("%d ops in the final graph." % len(output_graph_def.node))
 
         tensor_name = [tensor.name for tensor in output_graph_def.node]
-        print(tensor_name)
+        #print(tensor_name)
         print('---------------------------')
         # 在log_graph文件夹下生产日志文件，可以在tensorboard中可视化模型
         #summaryWriter = tf.summary.FileWriter('log_graph/', graph)

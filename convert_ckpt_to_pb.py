@@ -159,7 +159,7 @@ def freeze_graph2(input_checkpoint, pb_model):
 
 
 if __name__ == "__main__":
-    model_path = './weights/yolo.ckpt-1-6.4084' #load model
+    model_path = './weights/yolo.ckpt-13-6.2187' #load model
     pb_model = "model_yolov3.pb" #save final pb model
 
     freeze_graph(model_path, pb_model)

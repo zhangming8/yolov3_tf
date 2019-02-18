@@ -17,27 +17,52 @@ import config as cfg
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # use gpu 0
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
+model_name = "model_yolov3.pb"
+use_tensorrt = False #True
+input_name = "input/input_data"
+output_name = ["pred_lbbox/pred_bbox", "pred_mbbox/pred_bbox", "pred_sbbox/pred_bbox"]
+
+
+def get_tf_graph():
+    with gfile.FastGFile(model_name,'rb') as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+        print("[INFO] load .pb done...")
+    return graph_def
+
+
+def get_trt_graph(batch_size=32,workspace_size=1<<30):
+    import tensorflow.contrib.tensorrt as trt
+    precision_mode = "FP32" # 'FP32', 'FP16' and 'INT8'
+    # conver pb to FP32pb
+    with gfile.FastGFile(model_name,'rb') as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+        trt_graph = trt.create_inference_graph(input_graph_def=graph_def, outputs=output_name,
+                                         max_batch_size=batch_size,
+                                         max_workspace_size_bytes=workspace_size,
+                                         precision_mode=precision_mode)  # Get optimized graph
+    print("[INFO] ***********************************create tensorrt model done...")
+    return trt_graph
 
 
 def init_tf():
     global sess, input_data, pred_lbbox_, pred_mbbox_, pred_sbbox_
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
-    with gfile.FastGFile('./model_yolov3.pb', 'rb') as f:
-        graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
-        sess.graph.as_default()
-        tf.import_graph_def(graph_def, name='')
+    if use_tensorrt:
+        graph = get_trt_graph(batch_size=1)
+    else:
+        graph = get_tf_graph()
+    tf.import_graph_def(graph, name='')
 
     # 获取输入tensor
-    input_data = tf.get_default_graph().get_tensor_by_name("input/input_data:0")
-    print("input:", input_data)
+    input_data = tf.get_default_graph().get_tensor_by_name(input_name + ":0")
     # 获取预测tensor
-    pred_lbbox_ = tf.get_default_graph().get_tensor_by_name("pred_lbbox/pred_bbox:0")
-    pred_mbbox_ = tf.get_default_graph().get_tensor_by_name("pred_mbbox/pred_bbox:0")
-    pred_sbbox_ = tf.get_default_graph().get_tensor_by_name("pred_sbbox/pred_bbox:0")
-    print('load model done...')
+    pred_lbbox_ = tf.get_default_graph().get_tensor_by_name(output_name[0] + ":0")
+    pred_mbbox_ = tf.get_default_graph().get_tensor_by_name(output_name[1] + ":0")
+    pred_sbbox_ = tf.get_default_graph().get_tensor_by_name(output_name[2] + ":0")
 
 
 class YoloTest(object):
