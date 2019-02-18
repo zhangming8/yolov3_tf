@@ -23,6 +23,38 @@ input_name = "input/input_data"
 output_name = ["pred_lbbox/pred_bbox", "pred_mbbox/pred_bbox", "pred_sbbox/pred_bbox"]
 
 
+
+def img_preprocess2(image, bboxes, target_shape, correct_box=True):
+    """
+    RGB转换 -> resize(resize不改变原图的高宽比) -> normalize
+    并可以选择是否校正bbox
+    :param image_org: 要处理的图像
+    :param target_shape: 对图像处理后，期望得到的图像shape，存储格式为(h, w)
+    :return: 处理之后的图像，shape为target_shape
+    """
+    h_target, w_target = target_shape
+    h_org, w_org, _ = image.shape
+
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
+
+    resize_ratio = min(1.0 * w_target / w_org, 1.0 * h_target / h_org)
+    resize_w = int(resize_ratio * w_org)
+    resize_h = int(resize_ratio * h_org)
+    image_resized = cv2.resize(image, (resize_w, resize_h))
+
+    image_paded = np.full((h_target, w_target, 3), 128.0)
+    dw = int((w_target - resize_w) / 2)
+    dh = int((h_target - resize_h) / 2)
+    image_paded[dh:resize_h+dh, dw:resize_w+dw,:] = image_resized
+    image = image_paded / 255.0
+
+    if correct_box:
+        bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * resize_ratio + dw
+        bboxes[:, [1, 3]] = bboxes[:, [1, 3]] * resize_ratio + dh
+        return image, bboxes
+    return image
+
+
 def get_tf_graph():
     with gfile.FastGFile(model_name,'rb') as f:
         graph_def = tf.GraphDef()
@@ -90,15 +122,21 @@ class YoloTest(object):
         """
         org_image = np.copy(image)
         org_h, org_w, _ = org_image.shape
-        yolo_input = utils.img_preprocess2(image, None, (self.__test_input_size, self.__test_input_size), False)
+        s0=time.time()
+        yolo_input = img_preprocess2(image, None, (self.__test_input_size, self.__test_input_size), False)
         yolo_input = yolo_input[np.newaxis, ...]
-
+        s1=time.time()
+        print("process img time:",s1-s0)
         pred_sbbox, pred_mbbox, pred_lbbox = sess.run(
             [self.__pred_sbbox, self.__pred_mbbox, self.__pred_lbbox], feed_dict={self.__input_data: yolo_input})
-
+        s2 = time.time()
+        print("inference time:", s2-s1)
+        
         sbboxes = self.__convert_pred(pred_sbbox, (org_h, org_w), self.__valid_scales[0])
         mbboxes = self.__convert_pred(pred_mbbox, (org_h, org_w), self.__valid_scales[1])
         lbboxes = self.__convert_pred(pred_lbbox, (org_h, org_w), self.__valid_scales[2])
+        s3 = time.time()
+        print("conver pred time:", s3-s2)
 
         # sbboxes = self.__valid_scale_filter(sbboxes, self.__valid_scales[0])
         # mbboxes = self.__valid_scale_filter(mbboxes, self.__valid_scales[1])
@@ -106,6 +144,7 @@ class YoloTest(object):
 
         bboxes = np.concatenate([sbboxes, mbboxes, lbboxes], axis=0)
         bboxes = utils.nms(bboxes, self.__score_threshold, self.__iou_threshold, method='nms')
+        print("nms time:", time.time()-s3)
         return bboxes
 
     def __valid_scale_filter(self, bboxes, valid_scale):

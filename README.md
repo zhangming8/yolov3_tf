@@ -6,7 +6,7 @@ Note
 **I'm solving scale invariant. If you have a good paper, you can email me by StinkyTofu95@gmail.com. Thanks!**<br>
 
 ## added function:
-1. conver ckpt model to .pb model (python2 convert_ckpt_to_pb.py)
+1. the ckpt model is soooo big (around 1GB), so I add the function: conver ckpt model to .pb model(around 250Mb) (python2 convert_ckpt_to_pb.py)
 2. use .pb model to detect img (python2 predict_pb.py)
 
 
