@@ -31,7 +31,7 @@ if __name__ == '__main__':
     with tf.name_scope('input'):
         input_data = tf.placeholder(dtype=tf.float32, shape=(1, 416, 416, 3), name='input_data')
         training = tf.placeholder(dtype=tf.bool, name='training')
-    YOLO_V3(training).build_nework(input_data)
+    YOLO_V3(True).build_nework(input_data)
     for var in tf.global_variables():
         var_name = var.op.name
         var_name_mess = str(var_name).split('/')

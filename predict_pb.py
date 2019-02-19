@@ -234,8 +234,8 @@ if __name__ == '__main__':
     if os.path.exists(save_dir):
         shutil.rmtree(save_dir)
     os.mkdir(save_dir)
-    images = ['./data/' + image for image in os.listdir('./data')
-              if (image[-3:] == 'jpg') and (image[0] != '.')]
+    
+    images = glob.glob("/media/lishundong/DATA2/Nobody/notpeople/clean_labeled_notpeople/Train/*.jpg")
     yolo = YoloTest()
     for im in images:
         print("-------------------")

@@ -11,8 +11,8 @@ IOU_LOSS_THRESH = 0.5
 VALID_SCALES = [[0, np.inf], [0, np.inf], [0, np.inf]]
 
 # train
-BATCH_SIZE = 32
-BATCH_SIZE_STEP2 = 6
+BATCH_SIZE = 25
+BATCH_SIZE_STEP2 = 4
 LEARN_RATE_INIT = 1e-3
 MAX_LEARN_RATE_DECAY_TIME = 2
 MAX_WAVE_TIME = 2
@@ -41,8 +41,9 @@ ANNOT_DIR_PATH = 'data'
 WEIGHTS_DIR = 'weights'
 WEIGHTS_FILE = 'voc_fine_tune_initial.ckpt'
 LOG_DIR = 'log'
-CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-           'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
-           'train', 'tvmonitor']
+CLASSES = ["3", "4", "5", "6", "7", "8"]
+#CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+#           'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
+#           'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
+#           'train', 'tvmonitor']
 
