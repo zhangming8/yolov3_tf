@@ -9,7 +9,7 @@ import os
 import argparse
 import logging
 import time
-
+os.environ["TF_CPP_MIN_LOG_LEVEL"]='2' # 只显示 warning 和 Error 
 
 class YoloTrain(object):
     def __init__(self):
@@ -82,6 +82,7 @@ class YoloTrain(object):
 
             self.__train_op = self.__train_op_with_frozen_variables
             logging.info('Default trian step0 is freeze the weight of darknet')
+            print('Default trian step0 is freeze the weight of darknet')
             for var in self.__trainable_var_list:
                 logging.info('\t' + str(var.op.name).ljust(50) + str(var.shape))
 
@@ -101,6 +102,7 @@ class YoloTrain(object):
         self.__sess.run(tf.global_variables_initializer())
         ckpt_path = os.path.join(self.__weights_dir, self.__weights_file)
         logging.info('Restoring weights from:\t %s' % ckpt_path)
+        print('Restoring weights from:\t %s' % ckpt_path)
         self.__load.restore(self.__sess, ckpt_path)
 
         learn_rate_decay_time = 0
@@ -116,20 +118,23 @@ class YoloTrain(object):
                         tf.assign(self.__learn_rate, self.__sess.run(self.__learn_rate) / 10.0)
                     )
                     logging.info('The value of learn rate is:\t%f' % learning_rate_value)
+                    print('The value of learn rate is:\t%f' % learning_rate_value)
 
                 # 使用原始learn rate_init * 0.01微调至饱和后再用learn_rate_init * 0.01全部微调
                 learn_rate_decay_time += 1
                 if learn_rate_decay_time == (self.__max_learn_rate_decay_time + 1):
                     self.__train_op = self.__train_op_with_all_variables
                     logging.info('Train all of weights')
+                    print('Train all of weights')
                     self.__train_data.batch_size_change(self.__batch_size_step2)
                     self.__test_data.batch_size_change(self.__batch_size_step2)
 
             if not self.__frozen:
                 self.__train_op = self.__train_op_with_all_variables
                 logging.info('Train all of weights')
+                print('Train all of weights')
 
-            print_loss_iter = len(self.__train_data) / 10
+            print_loss_iter = len(self.__train_data) / 100
             total_train_loss = 0.0
 
             for step, (batch_image, batch_label_sbbox, batch_label_mbbox, batch_label_lbbox,
@@ -148,7 +153,7 @@ class YoloTrain(object):
                         # self.__training: False
                     }
                 )
-                print "running"
+                print "epoch {}/{}, step {}/{}, ".format(period, self.__max_periods, step, len(self.__train_data))
                 if np.isnan(loss_value):
                     raise ArithmeticError('The gradient is exploded')
                 total_train_loss += loss_value
@@ -157,8 +162,8 @@ class YoloTrain(object):
                 train_loss = total_train_loss / print_loss_iter
                 total_train_loss = 0.0
                 self.__summary_writer.add_summary(summary_value, period * len(self.__train_data) + step)
-                logging.info('Period:\t%d\tstep:\t%d\ttrain loss:\t%.4f' % (period, step, train_loss))
-                print('Period:\t%d\tstep:\t%d\ttrain loss:\t%.4f' % (period, step, train_loss))
+                logging.info('epoch {}/{}, step: {}/{}, train loss: {}'.format(period, self.__max_periods, step,len(self.__train_data), train_loss))
+                print('epoch {}/{}, step: {}/{}, train loss: {}'.format(period, self.__max_periods, step,len(self.__train_data), train_loss))
 
             if (period + 1) % self.__save_iter:
                 continue
@@ -182,9 +187,9 @@ class YoloTrain(object):
                 )
                 total_test_loss += loss_value
             test_loss = total_test_loss / len(self.__test_data)
-            logging.info('Period:\t%d\ttest loss:\t%.4f' % (period, test_loss))
-            print('Period:\t%d\ttest loss:\t%.4f' % (period, test_loss))
-            saved_model_name = os.path.join(self.__weights_dir, 'yolo.ckpt-%d-%.4f' % (period, test_loss))
+            logging.info('epoch:\t%d\ttest loss:\t%.4f' % (period, test_loss))
+            print('epoch:\t%d\ttest loss:\t%.4f' % (period, test_loss))
+            saved_model_name = os.path.join(self.__weights_dir, 'yolo.ckpt-epoch%d-loss%.4f' % (period, test_loss))
             self.__save.save(self.__sess, saved_model_name)
             logging.info('Saved model:\t%s' % saved_model_name)
             print('Saved model:\t%s' % saved_model_name)

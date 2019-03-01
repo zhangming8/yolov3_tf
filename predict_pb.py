@@ -235,7 +235,7 @@ if __name__ == '__main__':
         shutil.rmtree(save_dir)
     os.mkdir(save_dir)
     
-    images = glob.glob("/media/lishundong/DATA2/Nobody/notpeople/clean_labeled_notpeople/Train/*.jpg")
+    images = glob.glob("/media/lishundong/DATA2/Nobody/notpeople/Test/*.jpg")
     yolo = YoloTest()
     for im in images:
         print("-------------------")
