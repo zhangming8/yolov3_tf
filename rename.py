@@ -1,11 +1,14 @@
 # coding:utf-8
 
 import tensorflow as tf
+import os
+
+os.environ['CUDA_VISIBLE_DEVICES'] = "7"
 from model.yolo_v3 import YOLO_V3
 
 if __name__ == '__main__':
     org_weights_path = 'yolov3_to_tf/saved_model/yolov3_608_coco_pretrained.ckpt'
-    cur_weights_path = 'weights/voc_fine_tune_initial.ckpt'
+    cur_weights_path = './voc_fine_tune_initial.ckpt'
     preserve_cur_names = ['conv_sbbox', 'conv_mbbox', 'conv_lbbox']
     preserve_org_names = ['Conv_6', 'Conv_14', 'Conv_22']
 

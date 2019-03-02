@@ -33,14 +33,14 @@ SCORE_THRESHOLD = 0.3    # The threshold of the probability of the classes
 IOU_THRESHOLD = 0.45     # The threshold of the IOU when implement NMS
 
 # compute environment
-GPU = '0'
+GPU = '7'
 
 # name and path
 #DATASET_PATH = '/home/wz/doc/code/python_code/data/VOC'
-DATASET_PATH = '/media/lishundong/DATA2/docker/data/VOC'
-ANNOT_DIR_PATH = 'data'
-WEIGHTS_DIR = 'weights'
-WEIGHTS_FILE = '/home/lishundong/YOLO_V3/voc_fine_tune_initial.ckpt'
+DATASET_PATH = '/home/ming.zhang04/data/VOC'
+ANNOT_DIR_PATH = './data'
+WEIGHTS_DIR = './weights'
+WEIGHTS_FILE = './voc_fine_tune_initial.ckpt'
 LOG_DIR = 'log'
 CLASSES = ["3", "4", "5", "6", "7", "8"]
 #CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',

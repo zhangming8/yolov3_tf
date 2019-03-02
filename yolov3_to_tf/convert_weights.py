@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = "7"
 
 import yolo_v3
 import yolo_v3_tiny
