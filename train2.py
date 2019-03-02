@@ -103,7 +103,7 @@ class YoloTrain(object):
         display_step = 50
 
         for epoch in range(self.__max_epochs):
-            if epoch % self.__lr_decay_epoch and epoch != 0:
+            if epoch % self.__lr_decay_epoch == 0 and epoch != 0:
                 learning_rate_value = self.__sess.run(tf.assign(self.__learn_rate, self.__sess.run(self.__learn_rate)/10.0))
                 logging.info("change lr: {}".format(learning_rate_value))
                 print("change lr: {}".format(learning_rate_value))
