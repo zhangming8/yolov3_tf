@@ -103,10 +103,14 @@ class YoloTrain(object):
         display_step = 50
 
         for epoch in range(self.__max_epochs):
-            if epoch % self.__lr_decay_epoch == 0:
-                learning_rate_value = self.__sess.run(tf.assign(self.__learn_rate, self.__sess.run(self.__learn_rate)/10.0))
+            if epoch % self.__lr_decay_epoch and epoch != 0:
+                learning_rate_value = self.__sess.run(tf.assign(self.__learn_rate, self.__sess.run(self.__learn_rate)/30.0))
                 logging.info("change lr: {}".format(learning_rate_value))
                 print("change lr: {}".format(learning_rate_value))
+            elif epoch == 0:
+                learning_rate_value = self.__learn_rate_init
+                logging.info("init lr: {}".format(self.__learn_rate_init))
+                print("init lr: {}".format(self.__learn_rate_init))
             total_train_loss = 0.0
             for step, (batch_image, batch_label_sbbox, batch_label_mbbox, batch_label_lbbox, batch_sbboxes, batch_mbboxes, batch_lbboxes) in enumerate(self.__train_data):
                 _, summary_value, loss_value = self.__sess.run([self.__train_op, self.__summary_op, self.__loss], feed_dict={
@@ -153,6 +157,8 @@ class YoloTrain(object):
 
 
 if __name__ == '__main__':
+    if not os.path.exists('log/train'):
+        os.mkdir('log/train')
     log_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
     logging.basicConfig(filename='log/train/' + log_time + '.log', format='%(filename)s %(asctime)s\t%(message)s',
                         level=logging.DEBUG, datefmt='%Y-%m-%d %I:%M:%S', filemode='w')
