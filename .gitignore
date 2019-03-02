@@ -1,3 +1,4 @@
+*.ckpt*
 .idea/
 log/test/
 log/train/

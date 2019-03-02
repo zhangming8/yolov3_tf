@@ -100,7 +100,8 @@ class YoloTrain(object):
 
     def train(self):
         self.__sess.run(tf.global_variables_initializer())
-        ckpt_path = os.path.join(self.__weights_dir, self.__weights_file)
+        #ckpt_path = os.path.join(self.__weights_dir, self.__weights_file)
+        ckpt_path = self.__weights_file
         logging.info('Restoring weights from:\t %s' % ckpt_path)
         print('Restoring weights from:\t %s' % ckpt_path)
         self.__load.restore(self.__sess, ckpt_path)
@@ -134,7 +135,8 @@ class YoloTrain(object):
                 logging.info('Train all of weights')
                 print('Train all of weights')
 
-            print_loss_iter = len(self.__train_data) / 100
+            #print_loss_iter = len(self.__train_data) / 100
+            print_loss_iter = 50
             total_train_loss = 0.0
 
             for step, (batch_image, batch_label_sbbox, batch_label_mbbox, batch_label_lbbox,
@@ -153,11 +155,10 @@ class YoloTrain(object):
                         # self.__training: False
                     }
                 )
-                print "epoch {}/{}, step {}/{}, ".format(period, self.__max_periods, step, len(self.__train_data))
                 if np.isnan(loss_value):
                     raise ArithmeticError('The gradient is exploded')
                 total_train_loss += loss_value
-                if (step + 1) % print_loss_iter:
+                if (step ) % print_loss_iter:
                     continue
                 train_loss = total_train_loss / print_loss_iter
                 total_train_loss = 0.0
