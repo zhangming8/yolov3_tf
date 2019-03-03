@@ -4,10 +4,12 @@ import numpy as np
 import random
 import cv2
 import glob
+import os
 import xml.etree.cElementTree as ET
 
 
 def random_translate(img, bboxes, p=0.5):
+    # 随机平移
     if random.random() < p:
         h_img, w_img, _ = img.shape
         # 得到可以包含所有bbox的最大bbox
@@ -29,6 +31,7 @@ def random_translate(img, bboxes, p=0.5):
 
 
 def random_crop(img, bboxes, p=0.5):
+    # 随机裁剪
     if random.random() < p:
         h_img, w_img, _ = img.shape
         # 得到可以包含所有bbox的最大bbox
@@ -58,62 +61,110 @@ def random_horizontal_flip(img, bboxes, p=0.5):
     return img, bboxes
 
 
-# 下面的增强来自https://zhuanlan.zhihu.com/p/54566524
-# 随机变换亮度 (概率：0.5)
-def random_bright(im, bboxes, p=0.5, delta=32):
+def random_vertical_flip(img, bboxes, p=0.5):
     if random.random() < p:
-        delta = random.uniform(-delta, delta)
-        im += delta
-        im = im.clip(min=0, max=255)
-    return im, bboxes
+        h_img, _, _ = img.shape
+        img = img[::-1, :, :]
+        bboxes[:, [1, 3]] = h_img - bboxes[:, [3, 1]]
+    return img, bboxes
+
+
+
+def random_rot90_1(img, bboxes=None, p=0.5):
+    '''
+    :param img: nparray img
+    :param bboxes: np.array([[88, 176, 250, 312, 1222], [454, 115, 500, 291, 1222]]), 里面为x1, y1, x2, y2, 标签
+    :param p: 随机比例
+    :return:
+    '''
+    # 顺时针旋转90度
+    if random.random() < p:
+        h, w, _ = img.shape
+        trans_img = cv2.transpose(img)
+        new_img = cv2.flip(trans_img, 1)
+        if bboxes is None:
+            return new_img
+        else:
+            # bounding box 的变换: 一个图像的宽高是W,H, 如果顺时90度转换，那么原来的原点(0, 0)到了 (H, 0) 这个最右边的顶点了，
+            # 设图像中任何一个转换前的点(x1, y1), 转换后，x1, y1是表示到 (H, 0)这个点的距离，所以我们只要转换回到(0, 0) 这个点的距离即可！
+            # 所以+90度转换后的点为 (H-y1, x1), -90度转换后的点为(y1, W-x1)
+            bboxes[:, [0, 1, 2, 3]] = bboxes[:, [1, 0, 3, 2]]
+            bboxes[:, [0, 2]] = h - bboxes[:, [0, 2]]
+            return new_img, bboxes
+    else:
+        if bboxes is None:
+            return img
+        else:
+            return img, bboxes
+
+
+def random_rot90_2(img, bboxes=None, p=0.5):
+    '''
+    :param img: nparray img
+    :param bboxes: np.array([[88, 176, 250, 312, 1222], [454, 115, 500, 291, 1222]]), 里面为x1, y1, x2, y2, 标签
+    :param p: 随机比例
+    :return:
+    '''
+    # 逆时针旋转90度
+    if random.random() < p:
+        h, w, _ = img.shape
+        trans_img = cv2.transpose(img)
+        new_img = cv2.flip(trans_img, 0)
+        if bboxes is None:
+            return new_img
+        else:
+            # bounding box 的变换: 一个图像的宽高是W,H, 如果顺时90度转换，那么原来的原点(0, 0)到了 (H, 0) 这个最右边的顶点了，
+            # 设图像中任何一个转换前的点(x1, y1), 转换后，x1, y1是表示到 (H, 0)这个点的距离，所以我们只要转换回到(0, 0) 这个点的距离即可！
+            # 所以+90度转换后的点为 (H-y1, x1), -90度转换后的点为(y1, W-x1)
+            bboxes[:, [0, 1, 2, 3]] = bboxes[:, [1, 0, 3, 2]]
+            bboxes[:, [1, 3]] = w - bboxes[:, [1, 3]]
+            return new_img, bboxes
+    else:
+        if bboxes is None:
+            return img
+        else:
+            return img, bboxes
+
+
+# 随机对比度和亮度 (概率：0.5)
+def random_bright(img, bboxes, p=0.5, lower=0.5, upper=1.5):
+    if random.random() < p:
+        mean = np.mean(img)
+        img = img - mean
+        img = img * random.uniform(lower, upper) + mean * random.uniform(lower, upper)  # 亮度
+        img = img / 255.
+    return img, bboxes
 
 
 # 随机变换通道
-def random_swap(im, bboxes):
+def random_swap(im, bboxes, p=0.5):
     perms = ((0, 1, 2), (0, 2, 1),
             (1, 0, 2), (1, 2, 0),
             (2, 0, 1), (2, 1, 0))
-    if random.random() < 0.5:
+    if random.random() < p:
         swap = perms[random.randrange(0, len(perms))]
-        im = im[:, :, swap]
-    return im, bboxes
-
-
-# 随机变换对比度
-def random_contrast(im, bboxes, lower=0.5, upper=1.5):
-    if random.random() < 0.5:
-        alpha = random.uniform(lower, upper)
-        im *= alpha
-        im = im.clip(min=0, max=255)
+        print swap
+        im[:, :, (0, 1, 2)] = im[:, :, swap]
     return im, bboxes
 
 
 # 随机变换饱和度
-def random_saturation(im, bboxes, lower=0.5, upper=1.5):
-    if random.random() < 0.5:
-        im[:, :, 1] *= random.uniform(lower, upper)
+def random_saturation(im, bboxes, p=0.5, lower=0.5, upper=1.5):
+    if random.random() < p:
+        im[:, :, 1] = im[:, :, 1] * random.uniform(lower, upper)
     return im, bboxes
 
 
 # 随机变换色度(HSV空间下(-180, 180))
-def random_hue(im, bboxes, delta=18.0):
-    if random.random() < 0.5:
-        im[:, :, 0] += random.uniform(-delta, delta)
-        im[:, :, 0][im[:, :, 0] > 360.0] -= 360.0
-        im[:, :, 0][im[:, :, 0] < 0.0] += 360.0
+def random_hue(im, bboxes, p=0.5, delta=18.0):
+    if random.random() < p:
+        im[:, :, 0] = im[:, :, 0] + random.uniform(-delta, delta)
+        im[:, :, 0][im[:, :, 0] > 360.0] = im[:, :, 0][im[:, :, 0] > 360.0] - 360.0
+        im[:, :, 0][im[:, :, 0] < 0.0] = im[:, :, 0][im[:, :, 0] < 0.0] + 360.0
     return im, bboxes
 
 
-def rotate_aug(image, bboxes, angle, center=None, scale=1.0, p=0.5):
-    '''
-    :param img: img image
-    :param bboxes: bboxes should be numpy array with [[x1,x2,x3,x4],
-                                                    [y1,y2,y3,y4]]
-    :param angle:
-    :param center:
-    :param scale:
-    :return: the rotated image and the points
-    '''
+def random_rot(image, bboxes, angle, center=None, scale=1.0,):
     (h, w) = image.shape[:2]
     # 若未指定旋转中心，则将图像中心设为旋转中心
     if center is None:
@@ -177,26 +228,35 @@ def readAnnotations(xml_path):
         result.append(int(y1))
         result.append(int(x2))
         result.append(int(y2))
-        result.append(class_name)
+        result.append(222)
 
         results.append(result)
     return results
 
 
 if __name__ == "__main__":
-    img_list = glob.glob("/Users/ming/Desktop/voc/*.jpg")
+    img_list = glob.glob("/Users/ming/Desktop/voc/org/*.jpg")
     for image_path in img_list:
         img_org = cv2.imread(image_path)
         img = img_org
-        bboxes_org = readAnnotations(image_path[:-4] + ".xml")
-        print("img: {}, box: {}".format(image_path, bboxes_org))
+        bboxes = readAnnotations(image_path[:-4] + ".xml")
+        print("img: {},  box: {}".format(image_path, bboxes))
 
-        img, bboxes = rotate_aug(img, bboxes_org, 180)
-        print bboxes
+        img, bboxes = random_horizontal_flip(img, np.array(bboxes), 1)
+        # img, bboxes = random_vertical_flip(img, np.array(bboxes), 1)
+        # img, bboxes = random_rot90_1(img, np.array(bboxes), 1)
+        # img, bboxes = random_translate(img, np.array(bboxes), 1)
+        img, bboxes = random_crop(img, np.array(bboxes), 1)
+        # img, bboxes = random_bright(img, np.array(bboxes), 1)
+        # img, bboxes = random_swap(img, np.array(bboxes), 1)
+        # img, bboxes = random_saturation(img, np.array(bboxes), 1)
+        # img, bboxes = random_hue(img, np.array(bboxes), 1)
+        img = np.array(img)
+
         for box in bboxes:
             cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
-            cv2.putText(img, box[4], (box[0], max(20, box[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            cv2.putText(img, str(box[4]), (box[0], max(20, box[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         cv2.imshow(image_path, img)
-        img = 0
+        img_rotate = 0
         cv2.waitKey(0)
